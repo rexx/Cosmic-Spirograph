@@ -1,0 +1,5 @@
+{
+  "name": "Cosmic Spirograph",
+  "description": "A sophisticated Spirograph simulation allowing users to create intricate geometric patterns with customizable gears, hole positions, and colors. Features AI-powered pattern generation.",
+  "requestFramePermissions": []
+}

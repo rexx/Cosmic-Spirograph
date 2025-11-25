@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Canvas from './components/Canvas';
 import ControlPanel from './components/ControlPanel';
-import { SpirographParams, Mode, Language, Shape } from './types';
+import { SpirographParams, Mode, Language, Shape, PatternPreset, SavedSpirographParams } from './types';
 import { generateCreativePattern } from './utils/randomizer';
 import { parseParamsFromQueryString, serializeParamsToQueryString } from './utils/urlHelper';
+import { getStoredPresets, saveStoredPreset, deleteStoredPreset } from './utils/storage';
 
 const App: React.FC = () => {
   // Initialize params from URL if present, otherwise use defaults
@@ -24,6 +25,7 @@ const App: React.FC = () => {
     // Check if we are in a browser environment
     if (typeof window !== 'undefined') {
       const parsed = parseParamsFromQueryString(window.location.search);
+      // parsed params do not include speed, so default speed is preserved
       return { ...defaults, ...parsed };
     }
     
@@ -37,6 +39,14 @@ const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>('en');
   const [showGuides, setShowGuides] = useState(true);
   
+  // Presets State
+  const [presets, setPresets] = useState<PatternPreset[]>([]);
+
+  // Load presets on mount
+  useEffect(() => {
+    setPresets(getStoredPresets());
+  }, []);
+
   // Initialize dark mode from system preference or default to true
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -99,6 +109,22 @@ const App: React.FC = () => {
     });
   };
 
+  // Preset Handlers
+  const handleSavePreset = (name: string) => {
+    const updated = saveStoredPreset(name, params);
+    setPresets(updated);
+  };
+
+  const handleDeletePreset = (id: string) => {
+    const updated = deleteStoredPreset(id);
+    setPresets(updated);
+  };
+
+  const handleLoadPreset = (presetParams: SavedSpirographParams) => {
+    // Merge presetParams (no speed) with current state to preserve current speed
+    setParams(prev => ({ ...prev, ...presetParams }));
+  };
+
   // Combined playing state
   const isPlaying = isAutoPlaying || isPushPlaying;
 
@@ -140,6 +166,10 @@ const App: React.FC = () => {
           onPushStart={handlePushStart}
           onPushEnd={handlePushEnd}
           onShare={handleShare}
+          presets={presets}
+          onSavePreset={handleSavePreset}
+          onDeletePreset={handleDeletePreset}
+          onLoadPreset={handleLoadPreset}
         />
       </div>
 

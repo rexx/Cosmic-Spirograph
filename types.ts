@@ -23,9 +23,14 @@ export interface SpirographParams {
   elongation: number; // For Stadium/Rectangle length scaling
 }
 
+// Params to be saved (excludes speed)
+export type SavedSpirographParams = Omit<SpirographParams, 'speed'>;
+
 export interface PatternPreset {
+  id: string;
   name: string;
-  params: Partial<SpirographParams>;
+  params: SavedSpirographParams;
+  createdAt: number;
 }
 
 export interface RandomPatternResponse {

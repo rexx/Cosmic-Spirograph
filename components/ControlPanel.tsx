@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Mode, SpirographParams, Language, Shape } from '../types';
-import { Play, Trash2, Wand2, Sun, Moon, Languages, Circle, Square, Triangle, Minus, Eye, EyeOff, Fingerprint, Share2, Check } from 'lucide-react';
+import { Mode, SpirographParams, Language, Shape, PatternPreset, SavedSpirographParams } from '../types';
+import { Play, Trash2, Wand2, Sun, Moon, Languages, Circle, Square, Triangle, Minus, Eye, EyeOff, Fingerprint, Share2, Check, Save, FolderOpen, X } from 'lucide-react';
 
 interface ControlPanelProps {
   params: SpirographParams;
@@ -16,10 +16,14 @@ interface ControlPanelProps {
   setLanguage: (lang: Language) => void;
   showGuides: boolean;
   setShowGuides: (val: boolean) => void;
-  // New props for push-to-draw interaction
   onPushStart: () => void;
   onPushEnd: () => void;
   onShare: () => void;
+  // Preset props
+  presets: PatternPreset[];
+  onSavePreset: (name: string) => void;
+  onDeletePreset: (id: string) => void;
+  onLoadPreset: (params: SavedSpirographParams) => void;
 }
 
 const translations = {
@@ -50,6 +54,10 @@ const translations = {
     aiTitle: "Randomizer",
     aiDesc: "Generate a random geometric configuration.",
     surprise: "Surprise Me",
+    library: "Library",
+    savePlaceholder: "Pattern Name...",
+    save: "Save",
+    load: "Load",
   },
   zh: {
     title: "宇宙萬花尺",
@@ -78,6 +86,10 @@ const translations = {
     aiTitle: "隨機產生器",
     aiDesc: "隨機產生一組幾何參數配置。",
     surprise: "幫我設計 (Surprise Me)",
+    library: "圖案庫",
+    savePlaceholder: "輸入名稱...",
+    save: "儲存",
+    load: "載入",
   }
 };
 
@@ -97,10 +109,15 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   setShowGuides,
   onPushStart,
   onPushEnd,
-  onShare
+  onShare,
+  presets,
+  onSavePreset,
+  onDeletePreset,
+  onLoadPreset
 }) => {
   const t = translations[language];
   const [showCopied, setShowCopied] = useState(false);
+  const [presetName, setPresetName] = useState('');
 
   const handleChange = (key: keyof SpirographParams, value: any) => {
     setParams(prev => ({ ...prev, [key]: value }));
@@ -110,6 +127,13 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     onShare();
     setShowCopied(true);
     setTimeout(() => setShowCopied(false), 2000);
+  };
+
+  const handleSaveClick = () => {
+    if (presetName.trim()) {
+      onSavePreset(presetName);
+      setPresetName('');
+    }
   };
 
   return (
@@ -413,6 +437,55 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           {t.surprise}
         </button>
       </div>
+
+      {/* Library / Saved Presets (Moved to bottom) */}
+      <div className="mt-6 mb-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <FolderOpen size={16} />
+            {t.library}
+          </div>
+          
+          <div className="flex gap-2 mb-3">
+            <input 
+              type="text" 
+              value={presetName}
+              onChange={(e) => setPresetName(e.target.value)}
+              placeholder={t.savePlaceholder}
+              className="flex-1 min-w-0 px-2 py-1.5 text-sm rounded bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 focus:outline-none focus:border-indigo-500 dark:text-white"
+            />
+            <button 
+              onClick={handleSaveClick}
+              disabled={!presetName.trim()}
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded text-sm transition-colors flex items-center"
+              title={t.save}
+            >
+              <Save size={16} />
+            </button>
+          </div>
+
+          {presets.length > 0 && (
+            <div className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
+              {presets.map(preset => (
+                <div key={preset.id} className="flex items-center justify-between group p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded transition-colors">
+                  <button 
+                    onClick={() => onLoadPreset(preset.params)}
+                    className="flex-1 text-left text-sm text-gray-600 dark:text-gray-400 truncate hover:text-indigo-600 dark:hover:text-indigo-400"
+                  >
+                    {preset.name}
+                  </button>
+                  <button 
+                    onClick={() => onDeletePreset(preset.id)}
+                    className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Delete"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+      </div>
+
     </div>
   );
 };

@@ -9,7 +9,7 @@ export const serializeParamsToQueryString = (params: SpirographParams): string =
   searchParams.set('d', params.d.toString());
   // Strip # for cleaner URL if present
   searchParams.set('c', params.color.replace('#', ''));
-  searchParams.set('s', params.speed.toString());
+  // Speed (s) is EXCLUDED
   searchParams.set('m', params.mode);
   searchParams.set('sh', params.shape);
   searchParams.set('w', params.strokeWidth.toString());
@@ -42,8 +42,7 @@ export const parseParamsFromQueryString = (search: string): Partial<SpirographPa
     result.color = c.startsWith('#') ? c : '#' + c;
   }
 
-  const s = parseNum('s');
-  if (s && !isNaN(s)) result.speed = s;
+  // Speed (s) is EXCLUDED from parsing
 
   const m = searchParams.get('m');
   if (m === Mode.INNER || m === Mode.OUTER) result.mode = m as Mode;

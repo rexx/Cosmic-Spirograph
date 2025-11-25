@@ -22,7 +22,10 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
     const handleResize = () => {
       if (canvasRef.current && canvasRef.current.parentElement) {
         const { clientWidth, clientHeight } = canvasRef.current.parentElement;
-        setDimensions({ width: clientWidth, height: clientHeight });
+        // Ensure strictly positive dimensions to prevent InvalidStateError
+        if (clientWidth > 0 && clientHeight > 0) {
+          setDimensions({ width: clientWidth, height: clientHeight });
+        }
       }
     };
 
@@ -35,15 +38,18 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
   // Handle canvas resizing
   useEffect(() => {
     if (canvasRef.current && backgroundCanvasRef.current) {
-      canvasRef.current.width = dimensions.width;
-      canvasRef.current.height = dimensions.height;
-      backgroundCanvasRef.current.width = dimensions.width;
-      backgroundCanvasRef.current.height = dimensions.height;
+      const w = Math.max(1, dimensions.width);
+      const h = Math.max(1, dimensions.height);
+
+      canvasRef.current.width = w;
+      canvasRef.current.height = h;
+      backgroundCanvasRef.current.width = w;
+      backgroundCanvasRef.current.height = h;
       
       if (!isPlaying) {
         const ctx = canvasRef.current.getContext('2d');
         if (ctx) {
-           drawOverlay(ctx, dimensions.width, dimensions.height, distanceRef.current);
+           drawOverlay(ctx, w, h, distanceRef.current);
         }
       }
     }
@@ -70,6 +76,7 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
   // Helper function to draw the UI overlay (gears, arms)
   const drawOverlay = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number, distance: number) => {
     if (!showGuides) return;
+    if (width <= 0 || height <= 0) return;
 
     const { R, r, d, mode, color, shape, strokeWidth, elongation } = params;
     const cx = width / 2;
@@ -128,7 +135,8 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
     const penRadius = Math.max(4, strokeWidth / 2 + 1);
     ctx.arc(penX, penY, penRadius, 0, 2 * Math.PI);
     ctx.fill();
-    ctx.strokeStyle = isDarkMode ? '#000' : '#fff';
+    // Use White stroke for Dark Mode, Black stroke for Light Mode
+    ctx.strokeStyle = isDarkMode ? '#fff' : '#000';
     ctx.lineWidth = 1;
     ctx.stroke();
   }, [params, isDarkMode, drawFixedGearShape, showGuides]);
@@ -138,7 +146,7 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
     if (backgroundCanvasRef.current && canvasRef.current) {
       const bgCtx = backgroundCanvasRef.current.getContext('2d');
       const ctx = canvasRef.current.getContext('2d');
-      if (bgCtx && ctx) {
+      if (bgCtx && ctx && dimensions.width > 0 && dimensions.height > 0) {
         bgCtx.clearRect(0, 0, dimensions.width, dimensions.height);
         ctx.clearRect(0, 0, dimensions.width, dimensions.height);
         distanceRef.current = 0;
@@ -159,6 +167,7 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
 
     const animate = () => {
       if (!isPlaying) return;
+      if (dimensions.width <= 0 || dimensions.height <= 0) return;
 
       const { R, r, d, mode, speed, color, shape, strokeWidth, elongation } = params;
       const cx = dimensions.width / 2;
@@ -221,7 +230,11 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
 
       // Clear Foreground and Draw Overlay
       ctx.clearRect(0, 0, dimensions.width, dimensions.height);
-      ctx.drawImage(bgCanvas, 0, 0);
+      
+      // Safety check: only draw image if source has dimensions
+      if (bgCanvas.width > 0 && bgCanvas.height > 0) {
+        ctx.drawImage(bgCanvas, 0, 0);
+      }
       
       drawOverlay(ctx, dimensions.width, dimensions.height, distanceRef.current);
 
@@ -248,8 +261,15 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
+    // Safety check
+    if (dimensions.width <= 0 || dimensions.height <= 0) return;
+
     ctx.clearRect(0, 0, dimensions.width, dimensions.height);
-    ctx.drawImage(bgCanvas, 0, 0);
+    
+    if (bgCanvas.width > 0 && bgCanvas.height > 0) {
+      ctx.drawImage(bgCanvas, 0, 0);
+    }
+
     drawOverlay(ctx, dimensions.width, dimensions.height, distanceRef.current);
 
   }, [isPlaying, params, isDarkMode, dimensions, drawOverlay, showGuides]);

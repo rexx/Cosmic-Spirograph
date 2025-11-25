@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Mode, SpirographParams, Language, Shape } from '../types';
-import { Play, Trash2, Wand2, Sun, Moon, Languages, Circle, Square, Triangle, Minus, Eye, EyeOff, Fingerprint } from 'lucide-react';
+import { Play, Trash2, Wand2, Sun, Moon, Languages, Circle, Square, Triangle, Minus, Eye, EyeOff, Fingerprint, Share2, Check } from 'lucide-react';
 
 interface ControlPanelProps {
   params: SpirographParams;
@@ -19,6 +19,7 @@ interface ControlPanelProps {
   // New props for push-to-draw interaction
   onPushStart: () => void;
   onPushEnd: () => void;
+  onShare: () => void;
 }
 
 const translations = {
@@ -29,6 +30,8 @@ const translations = {
     autoStop: "Stop Auto",
     clear: "Clear Canvas",
     guides: "Toggle Guides",
+    share: "Share / Save URL",
+    copied: "Copied!",
     shape: "Fixed Gear Shape",
     sCircle: "Circle",
     sSquare: "Square",
@@ -55,6 +58,8 @@ const translations = {
     autoStop: "停止自動",
     clear: "清除畫布",
     guides: "顯示/隱藏尺規",
+    share: "分享 / 儲存網址",
+    copied: "已複製連結！",
     shape: "固定齒輪形狀",
     sCircle: "圓形",
     sSquare: "正方形",
@@ -91,12 +96,20 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   showGuides,
   setShowGuides,
   onPushStart,
-  onPushEnd
+  onPushEnd,
+  onShare
 }) => {
   const t = translations[language];
+  const [showCopied, setShowCopied] = useState(false);
 
   const handleChange = (key: keyof SpirographParams, value: any) => {
     setParams(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleShareClick = () => {
+    onShare();
+    setShowCopied(true);
+    setTimeout(() => setShowCopied(false), 2000);
   };
 
   return (
@@ -139,21 +152,22 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
 
       {/* Secondary Actions */}
-      <div className="flex gap-2 mb-6">
+      <div className="grid grid-cols-4 gap-2 mb-6">
         <button
           onClick={() => setIsPlaying(!isPlaying)}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all shadow-sm ${
+          className={`flex items-center justify-center rounded-lg text-sm font-medium transition-all shadow-sm h-10 ${
             isPlaying
               ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-500/20'
               : 'bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
           }`}
+          title={isPlaying ? t.autoStop : t.autoDraw}
         >
-          {isPlaying ? <><Square size={16} fill="currentColor" /> {t.autoStop}</> : <><Play size={16} /> {t.autoDraw}</>}
+          {isPlaying ? <Square size={18} fill="currentColor" /> : <Play size={18} />}
         </button>
         
         <button
           onClick={() => setShowGuides(!showGuides)}
-          className={`p-2 rounded-lg transition-colors ${
+          className={`flex items-center justify-center rounded-lg transition-colors h-10 ${
              showGuides 
              ? 'bg-gray-200 dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 hover:bg-gray-300 dark:hover:bg-gray-700' 
              : 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:bg-gray-300 dark:hover:bg-gray-700'
@@ -164,13 +178,33 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </button>
 
         <button
+          onClick={handleShareClick}
+          className="flex items-center justify-center bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 transition-colors h-10 relative"
+          title={t.share}
+        >
+          <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${showCopied ? 'opacity-100' : 'opacity-0'}`}>
+            <Check size={20} className="text-green-500" />
+          </div>
+          <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${showCopied ? 'opacity-0' : 'opacity-100'}`}>
+            <Share2 size={20} />
+          </div>
+        </button>
+
+        <button
           onClick={onClear}
-          className="p-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 transition-colors"
+          className="flex items-center justify-center bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 transition-colors h-10"
           title={t.clear}
         >
           <Trash2 size={20} />
         </button>
       </div>
+      
+      {/* Copied Feedback Text */}
+      {showCopied && (
+        <div className="text-center text-xs font-medium text-green-600 dark:text-green-400 -mt-4 mb-4 animate-pulse">
+          {t.copied}
+        </div>
+      )}
 
       <div className="space-y-6 flex-grow">
         

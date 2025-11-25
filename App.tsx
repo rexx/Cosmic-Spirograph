@@ -3,19 +3,31 @@ import Canvas from './components/Canvas';
 import ControlPanel from './components/ControlPanel';
 import { SpirographParams, Mode, Language, Shape } from './types';
 import { generateCreativePattern } from './utils/randomizer';
+import { parseParamsFromQueryString, serializeParamsToQueryString } from './utils/urlHelper';
 
 const App: React.FC = () => {
-  const [params, setParams] = useState<SpirographParams>({
-    R: 120,
-    r: 35,
-    d: 60,
-    color: '#00ffff',
-    speed: 5,
-    mode: Mode.INNER,
-    shape: Shape.CIRCLE,
-    resolution: 0.1,
-    strokeWidth: 2,
-    elongation: 2.0
+  // Initialize params from URL if present, otherwise use defaults
+  const [params, setParams] = useState<SpirographParams>(() => {
+    const defaults: SpirographParams = {
+      R: 120,
+      r: 35,
+      d: 60,
+      color: '#00ffff',
+      speed: 5,
+      mode: Mode.INNER,
+      shape: Shape.CIRCLE,
+      resolution: 0.1,
+      strokeWidth: 2,
+      elongation: 2.0
+    };
+    
+    // Check if we are in a browser environment
+    if (typeof window !== 'undefined') {
+      const parsed = parseParamsFromQueryString(window.location.search);
+      return { ...defaults, ...parsed };
+    }
+    
+    return defaults;
   });
 
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
@@ -35,10 +47,11 @@ const App: React.FC = () => {
 
   // Apply dark mode class to HTML element
   useEffect(() => {
+    const html = document.documentElement;
     if (isDarkMode) {
-      document.documentElement.classList.add('dark');
+      html.classList.add('dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      html.classList.remove('dark');
     }
   }, [isDarkMode]);
 
@@ -72,6 +85,18 @@ const App: React.FC = () => {
       }));
     }
     setIsGenerating(false);
+  };
+
+  const handleShare = () => {
+    if (typeof window === 'undefined') return;
+    
+    const qs = serializeParamsToQueryString(params);
+    const url = `${window.location.origin}${window.location.pathname}?${qs}`;
+    
+    // Simply copy to clipboard. Do not pushState to history to avoid SecurityError.
+    navigator.clipboard.writeText(url).catch(err => {
+      console.error('Failed to copy URL:', err);
+    });
   };
 
   // Combined playing state
@@ -114,6 +139,7 @@ const App: React.FC = () => {
           setShowGuides={setShowGuides}
           onPushStart={handlePushStart}
           onPushEnd={handlePushEnd}
+          onShare={handleShare}
         />
       </div>
 

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Canvas from './components/Canvas';
 import ControlPanel from './components/ControlPanel';
 import { SpirographParams, Mode, Language, Shape } from './types';
-import { generateCreativePattern } from './services/geminiService';
+import { generateCreativePattern } from './utils/randomizer';
 
 const App: React.FC = () => {
   const [params, setParams] = useState<SpirographParams>({
@@ -55,7 +55,7 @@ const App: React.FC = () => {
     setIsGenerating(true);
     // Do not stop auto playing here, allowing for continuous drawing during parameter changes.
 
-    const result = await generateCreativePattern(language);
+    const result = await generateCreativePattern();
     if (result) {
       setParams(prev => ({
         ...prev,

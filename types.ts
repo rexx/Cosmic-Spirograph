@@ -28,7 +28,7 @@ export interface PatternPreset {
   params: Partial<SpirographParams>;
 }
 
-export interface AIPatternResponse {
+export interface RandomPatternResponse {
   R: number;
   r: number;
   d: number;
@@ -36,7 +36,6 @@ export interface AIPatternResponse {
   mode: "INNER" | "OUTER";
   shape: "CIRCLE" | "SQUARE" | "TRIANGLE" | "STADIUM";
   elongation?: number;
-  // explanation removed as we are using local randomizer
 }
 
 export type Language = 'en' | 'zh';

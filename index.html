@@ -4,20 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cosmic Spirograph</title>
-    <!-- No CDNs here. Vite handles injection during build -->
-  <script type="importmap">
+    
+    <!-- DEV_ONLY_START -->
+    <!-- These scripts are needed for local/AI Studio preview but MUST be removed for production build -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">
 {
   "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+    "lucide-react": "https://esm.sh/lucide-react@0.344.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
     "vite": "https://aistudiocdn.com/vite@^7.2.4",
     "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+    <!-- DEV_ONLY_END -->
+
 </head>
   <body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white antialiased overflow-hidden">
     <div id="root"></div>

@@ -5,7 +5,7 @@ import { SpirographParams, Mode, Language, Shape, PatternPreset, SavedSpirograph
 import { generateCreativePattern } from './utils/randomizer';
 import { parseParamsFromQueryString, serializeParamsToQueryString } from './utils/urlHelper';
 import { getStoredPresets, saveStoredPreset, deleteStoredPreset } from './utils/storage';
-import { PenTool } from 'lucide-react';
+import { PenLine } from 'lucide-react';
 
 const App: React.FC = () => {
   // Initialize params from URL if present, otherwise use defaults
@@ -197,12 +197,17 @@ const App: React.FC = () => {
           className={`
             absolute bottom-6 right-6 z-30
             flex items-center gap-2 px-6 py-4 rounded-full
-            bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg shadow-xl
-            transition-all active:scale-95 shadow-indigo-500/40 select-none
-            ${isPushPlaying ? 'scale-95 bg-indigo-500 ring-4 ring-indigo-300' : ''}
+            bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg
+            shadow-xl shadow-indigo-500/40
+            transition-all duration-100 ease-in-out select-none
+            transform origin-center
+            ${isPushPlaying 
+              ? 'scale-95 translate-y-1 shadow-none bg-indigo-500' 
+              : 'active:scale-95 active:translate-y-1 active:shadow-none'
+            }
           `}
         >
-          <PenTool size={28} />
+          <PenLine size={28} />
           <span className="hidden sm:inline">{translations[language].pushToDraw}</span>
         </button>
       </main>

@@ -5,6 +5,7 @@ import { SpirographParams, Mode, Language, Shape, PatternPreset, SavedSpirograph
 import { generateCreativePattern } from './utils/randomizer';
 import { parseParamsFromQueryString, serializeParamsToQueryString } from './utils/urlHelper';
 import { getStoredPresets, saveStoredPreset, deleteStoredPreset } from './utils/storage';
+import { Fingerprint } from 'lucide-react';
 
 const App: React.FC = () => {
   // Initialize params from URL if present, otherwise use defaults
@@ -144,6 +145,11 @@ const App: React.FC = () => {
     if (!val) setIsPushPlaying(false);
   };
 
+  const translations = {
+    en: { pushToDraw: "Push to Draw" },
+    zh: { pushToDraw: "按住畫圖" }
+  };
+
   return (
     <div className="flex flex-col md:flex-row h-[100dvh] w-screen bg-gray-50 dark:bg-gray-950 overflow-hidden transition-colors duration-300">
       
@@ -163,8 +169,6 @@ const App: React.FC = () => {
           setLanguage={setLanguage}
           showGuides={showGuides}
           setShowGuides={setShowGuides}
-          onPushStart={handlePushStart}
-          onPushEnd={handlePushEnd}
           onShare={handleShare}
           presets={presets}
           onSavePreset={handleSavePreset}
@@ -174,7 +178,7 @@ const App: React.FC = () => {
       </div>
 
       {/* Canvas: Bottom on Mobile, Left on Desktop */}
-      <main className="order-2 md:order-1 flex-1 h-[60%] md:h-full relative">
+      <main className="order-2 md:order-1 flex-1 h-[60%] md:h-full relative overflow-hidden group">
         <Canvas 
           params={params} 
           isPlaying={isPlaying} 
@@ -182,6 +186,25 @@ const App: React.FC = () => {
           isDarkMode={isDarkMode}
           showGuides={showGuides}
         />
+
+        {/* Floating Push to Draw Button */}
+        <button
+          onMouseDown={handlePushStart}
+          onMouseUp={handlePushEnd}
+          onMouseLeave={handlePushEnd}
+          onTouchStart={(e) => { e.preventDefault(); handlePushStart(); }}
+          onTouchEnd={(e) => { e.preventDefault(); handlePushEnd(); }}
+          className={`
+            absolute bottom-6 right-6 z-30
+            flex items-center gap-2 px-6 py-4 rounded-full
+            bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg shadow-xl
+            transition-all active:scale-95 shadow-indigo-500/40 select-none
+            ${isPushPlaying ? 'scale-95 bg-indigo-500 ring-4 ring-indigo-300' : ''}
+          `}
+        >
+          <Fingerprint size={28} />
+          <span className="hidden sm:inline">{translations[language].pushToDraw}</span>
+        </button>
       </main>
     </div>
   );

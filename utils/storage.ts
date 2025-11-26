@@ -16,13 +16,23 @@ export const getStoredPresets = (): PatternPreset[] => {
 export const saveStoredPreset = (name: string, params: SpirographParams): PatternPreset[] => {
   const presets = getStoredPresets();
   
-  // Destructure speed out, save the rest
-  const { speed, ...paramsToSave } = params;
+  // Explicitly construct SavedSpirographParams to exclude speed and avoid unused variable errors
+  const paramsToSave: SavedSpirographParams = {
+    R: params.R,
+    r: params.r,
+    d: params.d,
+    color: params.color,
+    mode: params.mode,
+    shape: params.shape,
+    resolution: params.resolution,
+    strokeWidth: params.strokeWidth,
+    elongation: params.elongation
+  };
 
   const newPreset: PatternPreset = {
     id: Date.now().toString(),
     name: name.trim() || `Pattern ${new Date().toLocaleTimeString()}`,
-    params: paramsToSave as SavedSpirographParams, 
+    params: paramsToSave, 
     createdAt: Date.now()
   };
   

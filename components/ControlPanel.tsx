@@ -16,8 +16,6 @@ interface ControlPanelProps {
   setLanguage: (lang: Language) => void;
   showGuides: boolean;
   setShowGuides: (val: boolean) => void;
-  onPushStart: () => void;
-  onPushEnd: () => void;
   onShare: () => void;
   // Preset props
   presets: PatternPreset[];
@@ -29,7 +27,6 @@ interface ControlPanelProps {
 const translations = {
   en: {
     title: "Cosmic Spirograph",
-    pushToDraw: "Push to Draw",
     autoDraw: "Auto Draw",
     autoStop: "Stop Auto",
     clear: "Clear Canvas",
@@ -61,7 +58,6 @@ const translations = {
   },
   zh: {
     title: "宇宙萬花尺",
-    pushToDraw: "按住畫圖 (Push to Draw)",
     autoDraw: "自動繪製",
     autoStop: "停止自動",
     clear: "清除畫布",
@@ -107,8 +103,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   setLanguage,
   showGuides,
   setShowGuides,
-  onPushStart,
-  onPushEnd,
   onShare,
   presets,
   onSavePreset,
@@ -158,21 +152,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
         </div>
-      </div>
-
-      {/* Primary Interaction: Push to Draw */}
-      <div className="mb-4">
-        <button
-          onMouseDown={onPushStart}
-          onMouseUp={onPushEnd}
-          onMouseLeave={onPushEnd}
-          onTouchStart={(e) => { e.preventDefault(); onPushStart(); }}
-          onTouchEnd={(e) => { e.preventDefault(); onPushEnd(); }}
-          className="w-full py-4 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-all select-none bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/30 flex items-center justify-center gap-2"
-        >
-          <Fingerprint size={24} />
-          {t.pushToDraw}
-        </button>
       </div>
 
       {/* Secondary Actions */}

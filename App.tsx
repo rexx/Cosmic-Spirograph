@@ -5,7 +5,7 @@ import { SpirographParams, Mode, Language, Shape, PatternPreset, SavedSpirograph
 import { generateCreativePattern } from './utils/randomizer';
 import { parseParamsFromQueryString, serializeParamsToQueryString } from './utils/urlHelper';
 import { getStoredPresets, saveStoredPreset, deleteStoredPreset } from './utils/storage';
-import { Fingerprint } from 'lucide-react';
+import { PenTool } from 'lucide-react';
 
 const App: React.FC = () => {
   // Initialize params from URL if present, otherwise use defaults
@@ -202,7 +202,7 @@ const App: React.FC = () => {
             ${isPushPlaying ? 'scale-95 bg-indigo-500 ring-4 ring-indigo-300' : ''}
           `}
         >
-          <Fingerprint size={28} />
+          <PenTool size={28} />
           <span className="hidden sm:inline">{translations[language].pushToDraw}</span>
         </button>
       </main>

@@ -199,8 +199,7 @@ const App: React.FC = () => {
             flex items-center gap-2 px-6 py-4 rounded-full
             bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg
             shadow-xl shadow-indigo-500/40
-            transition-all duration-100 ease-in-out select-none
-            transform origin-center
+            transition-all duration-75 ease-in-out select-none
             ${isPushPlaying 
               ? 'scale-95 translate-y-1 shadow-none bg-indigo-500' 
               : 'active:scale-95 active:translate-y-1 active:shadow-none'

@@ -5,7 +5,7 @@ import { SpirographParams, Mode, Language, Shape, PatternPreset, SavedSpirograph
 import { generateCreativePattern } from './utils/randomizer';
 import { parseParamsFromQueryString, serializeParamsToQueryString } from './utils/urlHelper';
 import { getStoredPresets, saveStoredPreset, deleteStoredPreset } from './utils/storage';
-import { PenLine, Eye, EyeOff } from 'lucide-react';
+import { PenLine } from 'lucide-react';
 
 const App: React.FC = () => {
   // Initialize params from URL if present, otherwise use defaults

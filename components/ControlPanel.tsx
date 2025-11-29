@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Mode, SpirographParams, Language, Shape, PatternPreset, SavedSpirographParams } from '../types';
 import { Play, Trash2, Wand2, Sun, Moon, Languages, Circle, Square, Triangle, Minus, Eye, EyeOff, Share2, Check, Save, FolderOpen, X } from 'lucide-react';
 
@@ -89,6 +89,18 @@ const translations = {
   }
 };
 
+// Helper to convert HSL to Hex for the spectrum picker
+const hslToHex = (h: number, s: number, l: number) => {
+  l /= 100;
+  const a = s * Math.min(l, 1 - l) / 100;
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+};
+
 const ControlPanel: React.FC<ControlPanelProps> = ({
   params,
   setParams,
@@ -112,6 +124,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   const t = translations[language];
   const [showCopied, setShowCopied] = useState(false);
   const [presetName, setPresetName] = useState('');
+  const spectrumRef = useRef<HTMLDivElement>(null);
+  const [isDraggingSpectrum, setIsDraggingSpectrum] = useState(false);
 
   const handleChange = (key: keyof SpirographParams, value: any) => {
     setParams(prev => ({ ...prev, [key]: value }));
@@ -129,6 +143,32 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       setPresetName('');
     }
   };
+
+  // Spectrum Interaction Logic
+  const handleSpectrumChange = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!spectrumRef.current) return;
+    
+    const rect = spectrumRef.current.getBoundingClientRect();
+    let clientX;
+    
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+    } else {
+      clientX = (e as React.MouseEvent).clientX;
+    }
+
+    // Calculate Hue based on X position (0 to 360)
+    let x = clientX - rect.left;
+    x = Math.max(0, Math.min(x, rect.width)); // Clamp
+    const hue = (x / rect.width) * 360;
+    
+    // Convert to Hex with 100% Saturation and 50% Lightness
+    const hex = hslToHex(hue, 100, 50);
+    handleChange('color', hex);
+  };
+
+  // Primary colors + BW
+  const colorPresets = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff', '#000000'];
 
   return (
     <div className="w-full md:w-80 bg-white dark:bg-gray-900 border-b md:border-b-0 md:border-l border-gray-200 dark:border-gray-800 p-6 flex flex-col h-full overflow-y-auto shadow-xl z-10 text-gray-900 dark:text-gray-100 transition-colors duration-300">
@@ -370,31 +410,71 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           </div>
         </div>
 
-        {/* Color Picker */}
+        {/* Color Picker - Redesigned */}
         <div>
           <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">{t.penColor}</label>
-          <div className="flex gap-2 flex-wrap">
-             {['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff', '#000000'].map(c => (
+          
+          {/* Current Color Information Panel */}
+          <div className="flex items-center justify-between mb-3 bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+             {/* Left: Hex Code (No text label) */}
+             <span className="font-mono text-gray-900 dark:text-white text-sm font-semibold pl-2 uppercase">{params.color}</span>
+             
+             {/* Right: Color Preview (Clickable for System Picker) */}
+             <div 
+               className="relative w-16 h-8 rounded shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all"
+               title="Click to open system color picker"
+             >
+                <div className="absolute inset-0" style={{ backgroundColor: params.color }} />
+                <input 
+                   type="color" 
+                   value={params.color}
+                   onChange={(e) => handleChange('color', e.target.value)}
+                   className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" 
+                />
+             </div>
+          </div>
+
+          {/* Spectrum Bar (Interactive) */}
+          <div className="mb-3">
+            <div 
+              ref={spectrumRef}
+              className="h-8 w-full rounded cursor-crosshair relative shadow-sm border border-gray-200 dark:border-gray-600 touch-none ring-1 ring-black/5"
+              style={{ background: 'linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)' }}
+              onMouseDown={(e) => {
+                setIsDraggingSpectrum(true);
+                handleSpectrumChange(e);
+              }}
+              onMouseMove={(e) => {
+                if (isDraggingSpectrum) handleSpectrumChange(e);
+              }}
+              onMouseUp={() => setIsDraggingSpectrum(false)}
+              onMouseLeave={() => setIsDraggingSpectrum(false)}
+              onTouchStart={(e) => {
+                setIsDraggingSpectrum(true);
+                handleSpectrumChange(e);
+              }}
+              onTouchMove={(e) => {
+                if (isDraggingSpectrum) handleSpectrumChange(e);
+              }}
+              onTouchEnd={() => setIsDraggingSpectrum(false)}
+            />
+          </div>
+
+          {/* Color Palette Buttons */}
+          <div className="flex gap-2 flex-wrap justify-start">
+             {colorPresets.map(c => (
                <button
                 key={c}
                 onClick={() => handleChange('color', c)}
-                className={`w-8 h-8 rounded-full border-2 shadow-sm ${
-                  params.color === c 
-                    ? 'border-indigo-500 dark:border-white scale-110' 
-                    : 'border-gray-200 dark:border-transparent hover:scale-110'
-                } transition-all`}
+                className={`w-8 h-8 rounded-full border-2 shadow-sm transition-all hover:scale-110 active:scale-95 ${
+                  params.color.toLowerCase() === c.toLowerCase()
+                    ? 'border-indigo-500 dark:border-white scale-110 ring-2 ring-indigo-200 dark:ring-gray-500' 
+                    : 'border-gray-200 dark:border-transparent'
+                }`}
                 style={{ backgroundColor: c }}
                 title={c}
                />
              ))}
-             <div className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-600 cursor-pointer shadow-sm hover:scale-110 transition-transform">
-               <input 
-                 type="color" 
-                 value={params.color}
-                 onChange={(e) => handleChange('color', e.target.value)}
-                 className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] p-0 m-0 border-0 cursor-pointer"
-               />
-             </div>
           </div>
         </div>
       </div>

@@ -9,9 +9,10 @@ interface CanvasProps {
   clearTrigger: number;
   isDarkMode: boolean;
   showGuides: boolean;
+  showCanvasControls: boolean;
 }
 
-const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDarkMode, showGuides }) => {
+const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDarkMode, showGuides, showCanvasControls }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
   const requestRef = useRef<number>(0);
@@ -373,30 +374,32 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
       />
 
       {/* Zoom Controls */}
-      <div className="absolute bottom-6 left-6 z-20 flex flex-col gap-2 bg-white/90 dark:bg-gray-800/90 p-2 rounded-lg shadow-lg backdrop-blur-sm border border-gray-200 dark:border-gray-700">
-        <button 
-          onClick={handleZoomIn}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-700 dark:text-gray-200 transition-colors"
-          title="Zoom In"
-        >
-          <Plus size={20} />
-        </button>
-        <button 
-          onClick={handleZoomOut}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-700 dark:text-gray-200 transition-colors"
-          title="Zoom Out"
-        >
-          <Minus size={20} />
-        </button>
-        <div className="h-px bg-gray-200 dark:bg-gray-700 my-0.5" />
-        <button 
-          onClick={handleResetView}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-700 dark:text-gray-200 transition-colors"
-          title="Reset View"
-        >
-          <Maximize size={20} />
-        </button>
-      </div>
+      {showCanvasControls && (
+        <div className="absolute bottom-6 left-6 z-20 flex flex-col gap-2 bg-white/90 dark:bg-gray-800/90 p-2 rounded-lg shadow-lg backdrop-blur-sm border border-gray-200 dark:border-gray-700">
+          <button 
+            onClick={handleZoomIn}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-700 dark:text-gray-200 transition-colors"
+            title="Zoom In"
+          >
+            <Plus size={20} />
+          </button>
+          <button 
+            onClick={handleZoomOut}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-700 dark:text-gray-200 transition-colors"
+            title="Zoom Out"
+          >
+            <Minus size={20} />
+          </button>
+          <div className="h-px bg-gray-200 dark:bg-gray-700 my-0.5" />
+          <button 
+            onClick={handleResetView}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-700 dark:text-gray-200 transition-colors"
+            title="Reset View"
+          >
+            <Maximize size={20} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

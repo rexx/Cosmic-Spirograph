@@ -5,7 +5,7 @@ import { SpirographParams, Mode, Language, Shape, PatternPreset, SavedSpirograph
 import { generateCreativePattern } from './utils/randomizer';
 import { parseParamsFromQueryString, serializeParamsToQueryString } from './utils/urlHelper';
 import { getStoredPresets, saveStoredPreset, deleteStoredPreset } from './utils/storage';
-import { PenLine } from 'lucide-react';
+import { PenLine, Eye, EyeOff } from 'lucide-react';
 
 const App: React.FC = () => {
   // Initialize params from URL if present, otherwise use defaults
@@ -39,6 +39,9 @@ const App: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [language, setLanguage] = useState<Language>('en');
   const [showGuides, setShowGuides] = useState(true);
+  
+  // UI State: Canvas Floating Controls Visibility
+  const [showCanvasControls, setShowCanvasControls] = useState(true);
   
   // Presets State
   const [presets, setPresets] = useState<PatternPreset[]>([]);
@@ -151,7 +154,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] w-screen bg-gray-50 dark:bg-gray-950 overflow-hidden transition-colors duration-300">
+    <div className="flex flex-col md:flex-row h-[100dvh] w-screen bg-gray-50 dark:bg-gray-950 overflow-hidden transition-colors duration-300 relative">
       
       {/* Controls: Top on Mobile, Right on Desktop */}
       <div className="order-1 md:order-2 w-full h-[40%] md:w-80 md:h-full flex-none z-20 shadow-md md:shadow-none relative">
@@ -174,6 +177,8 @@ const App: React.FC = () => {
           onSavePreset={handleSavePreset}
           onDeletePreset={handleDeletePreset}
           onLoadPreset={handleLoadPreset}
+          showCanvasControls={showCanvasControls}
+          toggleCanvasControls={() => setShowCanvasControls(!showCanvasControls)}
         />
       </div>
 
@@ -185,30 +190,33 @@ const App: React.FC = () => {
           clearTrigger={clearTrigger}
           isDarkMode={isDarkMode}
           showGuides={showGuides}
+          showCanvasControls={showCanvasControls}
         />
 
         {/* Floating Push to Draw Button */}
-        <button
-          onMouseDown={handlePushStart}
-          onMouseUp={handlePushEnd}
-          onMouseLeave={handlePushEnd}
-          onTouchStart={(e) => { e.preventDefault(); handlePushStart(); }}
-          onTouchEnd={(e) => { e.preventDefault(); handlePushEnd(); }}
-          className={`
-            absolute bottom-6 right-6 z-30
-            flex items-center gap-2 px-6 py-4 rounded-full
-            bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg
-            shadow-xl shadow-indigo-500/40
-            transition-all duration-75 ease-in-out select-none
-            ${isPushPlaying 
-              ? 'scale-95 translate-y-1 shadow-none bg-indigo-500' 
-              : 'active:scale-95 active:translate-y-1 active:shadow-none'
-            }
-          `}
-        >
-          <PenLine size={28} />
-          <span className="hidden sm:inline">{translations[language].pushToDraw}</span>
-        </button>
+        {showCanvasControls && (
+          <button
+            onMouseDown={handlePushStart}
+            onMouseUp={handlePushEnd}
+            onMouseLeave={handlePushEnd}
+            onTouchStart={(e) => { e.preventDefault(); handlePushStart(); }}
+            onTouchEnd={(e) => { e.preventDefault(); handlePushEnd(); }}
+            className={`
+              absolute bottom-6 right-6 z-30
+              flex items-center gap-2 px-6 py-4 rounded-full
+              bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg
+              shadow-xl shadow-indigo-500/40
+              transition-all duration-75 ease-in-out select-none
+              ${isPushPlaying 
+                ? 'scale-95 translate-y-1 shadow-none bg-indigo-500' 
+                : 'active:scale-95 active:translate-y-1 active:shadow-none'
+              }
+            `}
+          >
+            <PenLine size={28} />
+            <span className="hidden sm:inline">{translations[language].pushToDraw}</span>
+          </button>
+        )}
       </main>
     </div>
   );

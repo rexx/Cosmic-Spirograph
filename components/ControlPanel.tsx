@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Mode, SpirographParams, Language, Shape, PatternPreset, SavedSpirographParams } from '../types';
-import { Play, Trash2, Wand2, Sun, Moon, Languages, Circle, Square, Triangle, Minus, Eye, EyeOff, Share2, Check, Save, FolderOpen, X } from 'lucide-react';
+import { Play, Trash2, Wand2, Sun, Moon, Languages, Circle, Square, Triangle, Minus, Eye, EyeOff, Share2, Check, Save, FolderOpen, X, Image as ImageIcon } from 'lucide-react';
 
 interface ControlPanelProps {
   params: SpirographParams;
@@ -22,6 +22,9 @@ interface ControlPanelProps {
   onSavePreset: (name: string) => void;
   onDeletePreset: (id: string) => void;
   onLoadPreset: (params: SavedSpirographParams) => void;
+  // Canvas UI controls
+  showCanvasControls: boolean;
+  toggleCanvasControls: () => void;
 }
 
 const translations = {
@@ -31,6 +34,7 @@ const translations = {
     autoStop: "Stop Auto",
     clear: "Clear Canvas",
     guides: "Toggle Guides",
+    canvasUi: "Toggle Canvas UI",
     share: "Share / Save URL",
     copied: "Copied!",
     shape: "Fixed Gear Shape",
@@ -62,6 +66,7 @@ const translations = {
     autoStop: "停止自動",
     clear: "清除畫布",
     guides: "顯示/隱藏尺規",
+    canvasUi: "顯示/隱藏浮動按鈕",
     share: "分享 / 儲存網址",
     copied: "已複製連結！",
     shape: "固定齒輪形狀",
@@ -119,7 +124,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   presets,
   onSavePreset,
   onDeletePreset,
-  onLoadPreset
+  onLoadPreset,
+  showCanvasControls,
+  toggleCanvasControls
 }) => {
   const t = translations[language];
   const [showCopied, setShowCopied] = useState(false);
@@ -171,7 +178,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   const colorPresets = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff', '#000000'];
 
   return (
-    <div className="w-full md:w-80 bg-white dark:bg-gray-900 border-b md:border-b-0 md:border-l border-gray-200 dark:border-gray-800 p-6 flex flex-col h-full overflow-y-auto shadow-xl z-10 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+    <div className="w-full h-full bg-white dark:bg-gray-900 p-6 flex flex-col overflow-y-auto custom-scrollbar text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-500 to-cyan-500 bg-clip-text text-transparent">
           {t.title}
@@ -195,7 +202,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
 
       {/* Secondary Actions */}
-      <div className="grid grid-cols-4 gap-2 mb-6">
+      <div className="grid grid-cols-5 gap-2 mb-6">
         <button
           onClick={() => setIsPlaying(!isPlaying)}
           className={`flex items-center justify-center rounded-lg text-sm font-medium transition-all shadow-sm h-10 ${
@@ -218,6 +225,18 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           title={t.guides}
         >
           {showGuides ? <Eye size={20} /> : <EyeOff size={20} />}
+        </button>
+
+        <button
+          onClick={toggleCanvasControls}
+          className={`flex items-center justify-center rounded-lg transition-colors h-10 ${
+             !showCanvasControls
+             ? 'bg-gray-200 dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 hover:bg-gray-300 dark:hover:bg-gray-700' 
+             : 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:bg-gray-300 dark:hover:bg-gray-700'
+          }`}
+          title={t.canvasUi}
+        >
+          <ImageIcon size={20} />
         </button>
 
         <button

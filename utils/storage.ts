@@ -26,7 +26,8 @@ export const saveStoredPreset = (name: string, params: SpirographParams): Patter
     shape: params.shape,
     resolution: params.resolution,
     strokeWidth: params.strokeWidth,
-    elongation: params.elongation
+    elongation: params.elongation,
+    isReverseGear: params.isReverseGear || false
   };
 
   const newPreset: PatternPreset = {

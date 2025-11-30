@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Mode, SpirographParams, Language, Shape, PatternPreset, SavedSpirographParams } from '../types';
-import { Play, Trash2, Wand2, Sun, Moon, Languages, Circle, Square, Triangle, Minus, Eye, EyeOff, Share2, Check, Save, FolderOpen, X, Image as ImageIcon } from 'lucide-react';
+import { Play, Trash2, Wand2, Sun, Moon, Languages, Circle, Square, Triangle, Minus, Eye, EyeOff, Share2, Check, Save, FolderOpen, X, Image as ImageIcon, RotateCcw } from 'lucide-react';
 
 interface ControlPanelProps {
   params: SpirographParams;
@@ -36,6 +36,7 @@ const translations = {
     guides: "Toggle Guides",
     canvasUi: "Toggle Canvas UI",
     share: "Share / Save URL",
+    shareBtn: "Share Current Config",
     copied: "Copied!",
     shape: "Fixed Gear Shape",
     sCircle: "Circle",
@@ -52,6 +53,7 @@ const translations = {
     thickness: "Line Thickness",
     speed: "Drawing Speed",
     penColor: "Pen Color",
+    reverseGear: "Reverse Gear Rotation",
     aiTitle: "Randomizer",
     aiDesc: "Generate a random geometric configuration.",
     surprise: "Surprise Me",
@@ -68,6 +70,7 @@ const translations = {
     guides: "顯示/隱藏尺規",
     canvasUi: "顯示/隱藏浮動按鈕",
     share: "分享 / 儲存網址",
+    shareBtn: "分享目前設定",
     copied: "已複製連結！",
     shape: "固定齒輪形狀",
     sCircle: "圓形",
@@ -84,6 +87,7 @@ const translations = {
     thickness: "線條粗細",
     speed: "繪製速度",
     penColor: "筆尖顏色",
+    reverseGear: "反向齒輪自轉 (反物理)",
     aiTitle: "隨機產生器",
     aiDesc: "隨機產生一組幾何參數配置。",
     surprise: "幫我設計 (Surprise Me)",
@@ -201,8 +205,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
       </div>
 
-      {/* Secondary Actions */}
-      <div className="grid grid-cols-5 gap-2 mb-6">
+      {/* Top Actions Grid (Removed Share) */}
+      <div className="grid grid-cols-4 gap-2 mb-6">
         <button
           onClick={() => setIsPlaying(!isPlaying)}
           className={`flex items-center justify-center rounded-lg text-sm font-medium transition-all shadow-sm h-10 ${
@@ -240,19 +244,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </button>
 
         <button
-          onClick={handleShareClick}
-          className="flex items-center justify-center bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 transition-colors h-10 relative"
-          title={t.share}
-        >
-          <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${showCopied ? 'opacity-100' : 'opacity-0'}`}>
-            <Check size={20} className="text-green-500" />
-          </div>
-          <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${showCopied ? 'opacity-0' : 'opacity-100'}`}>
-            <Share2 size={20} />
-          </div>
-        </button>
-
-        <button
           onClick={onClear}
           className="flex items-center justify-center bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 transition-colors h-10"
           title={t.clear}
@@ -260,13 +251,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <Trash2 size={20} />
         </button>
       </div>
-      
-      {/* Copied Feedback Text */}
-      {showCopied && (
-        <div className="text-center text-xs font-medium text-green-600 dark:text-green-400 -mt-4 mb-4 animate-pulse">
-          {t.copied}
-        </div>
-      )}
 
       <div className="space-y-6 flex-grow">
         
@@ -496,10 +480,30 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
              ))}
           </div>
         </div>
+
+        {/* Reverse Gear Toggle */}
+        <div className="flex items-center gap-2 pt-2 pb-2">
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <div className="relative">
+                <input 
+                  type="checkbox" 
+                  className="peer sr-only" 
+                  checked={params.isReverseGear || false} 
+                  onChange={(e) => handleChange('isReverseGear', e.target.checked)}
+                />
+                <div className="w-9 h-5 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-orange-500 peer-focus:ring-2 peer-focus:ring-orange-300 transition-colors" />
+                <div className="absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform peer-checked:translate-x-4 shadow-sm" />
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors">
+                 <RotateCcw size={14} />
+                 {t.reverseGear}
+              </div>
+            </label>
+        </div>
       </div>
 
       {/* Randomizer Generation */}
-      <div className="mt-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-500/30 rounded-xl">
+      <div className="mt-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-500/30 rounded-xl">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">{t.aiTitle}</h3>
           <Wand2 size={16} className="text-indigo-500 dark:text-indigo-400" />
@@ -513,6 +517,25 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-400 dark:disabled:bg-indigo-800 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors flex justify-center items-center gap-2 shadow-sm"
         >
           {t.surprise}
+        </button>
+      </div>
+
+      {/* Share Button (New Location) */}
+      <div className="mt-4">
+        <button
+          onClick={handleShareClick}
+          className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg transition-all flex justify-center items-center gap-2 relative overflow-hidden group"
+          title={t.share}
+        >
+          <div className={`flex items-center gap-2 transition-all duration-300 ${showCopied ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
+            <Share2 size={16} />
+            {t.shareBtn}
+          </div>
+          
+          <div className={`absolute inset-0 flex items-center justify-center gap-2 text-green-600 dark:text-green-400 font-bold transition-all duration-300 ${showCopied ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+            <Check size={18} />
+            {t.copied}
+          </div>
         </button>
       </div>
 

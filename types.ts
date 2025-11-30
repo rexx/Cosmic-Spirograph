@@ -21,6 +21,7 @@ export interface SpirographParams {
   resolution: number;
   strokeWidth: number;
   elongation: number; // For Stadium/Rectangle length scaling
+  isReverseGear: boolean; // Anti-physics rotation
 }
 
 // Params to be saved (excludes speed)

@@ -85,7 +85,7 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
     if (!showGuides) return;
     if (width <= 0 || height <= 0) return;
 
-    const { R, r, d, mode, color, shape, strokeWidth, elongation } = params;
+    const { R, r, d, mode, color, shape, strokeWidth, elongation, isReverseGear } = params;
     const cx = width / 2;
     const cy = height / 2;
 
@@ -130,7 +130,18 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
       contactAngle += Math.PI;
     }
     
-    const penTheta = contactAngle - (distance / r);
+    // Rotation Calculation:
+    // Standard Physics:
+    // Inner (Hypo): Orbit CW -> Rotation CCW relative to contact line -> Subtract Angle
+    // Outer (Epi): Orbit CW -> Rotation CW relative to contact line -> Add Angle
+    
+    // Reverse Gear (Anti-Physics):
+    // Inner: Add Angle
+    // Outer: Subtract Angle
+    
+    const rotation = distance / r;
+    const sign = (mode === Mode.OUTER ? 1 : -1) * (isReverseGear ? -1 : 1);
+    const penTheta = contactAngle + (sign * rotation);
     
     const penX = gearCx + d * Math.cos(penTheta);
     const penY = gearCy + d * Math.sin(penTheta);
@@ -224,7 +235,7 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
       if (isPlaying) {
         if (dimensions.width <= 0 || dimensions.height <= 0) return;
 
-        const { R, r, d, mode, speed, color, shape, strokeWidth, elongation } = params;
+        const { R, r, d, mode, speed, color, shape, strokeWidth, elongation, isReverseGear } = params;
         const cx = dimensions.width / 2;
         const cy = dimensions.height / 2;
 
@@ -250,7 +261,11 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
           startGearCy = cy + startShapeP.y + r * Math.sin(startNorm);
         }
         let startContactA = startNorm + (mode === Mode.OUTER ? Math.PI : 0);
-        let startPenTheta = startContactA - (startDist / r);
+        
+        let startRot = startDist / r;
+        let startSign = (mode === Mode.OUTER ? 1 : -1) * (isReverseGear ? -1 : 1);
+        let startPenTheta = startContactA + (startSign * startRot);
+
         let startPenX = startGearCx + d * Math.cos(startPenTheta);
         let startPenY = startGearCy + d * Math.sin(startPenTheta);
 
@@ -273,7 +288,11 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
           }
 
           let cAngle = norm + (mode === Mode.OUTER ? Math.PI : 0);
-          let pTheta = cAngle - (dist / r);
+          
+          let rot = dist / r;
+          let sign = (mode === Mode.OUTER ? 1 : -1) * (isReverseGear ? -1 : 1);
+          let pTheta = cAngle + (sign * rot);
+
           let pX = gCx + d * Math.cos(pTheta);
           let pY = gCy + d * Math.sin(pTheta);
 

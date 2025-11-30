@@ -20,7 +20,8 @@ const App: React.FC = () => {
       shape: Shape.CIRCLE,
       resolution: 0.1,
       strokeWidth: 2,
-      elongation: 2.0
+      elongation: 2.0,
+      isReverseGear: false
     };
     
     // Check if we are in a browser environment
@@ -95,7 +96,10 @@ const App: React.FC = () => {
                result.shape === 'TRIANGLE' ? Shape.TRIANGLE : 
                result.shape === 'STADIUM' ? Shape.STADIUM : 
                Shape.CIRCLE,
-        elongation: result.elongation ?? 2.0
+        elongation: result.elongation ?? 2.0,
+        // Reset reverse gear on random gen? Or keep? Let's keep existing setting or default false.
+        // Usually randomizer is for standard patterns, so let's default to false.
+        isReverseGear: false
       }));
     }
     setIsGenerating(false);

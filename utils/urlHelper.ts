@@ -14,6 +14,10 @@ export const serializeParamsToQueryString = (params: SpirographParams): string =
   searchParams.set('sh', params.shape);
   searchParams.set('w', params.strokeWidth.toString());
   searchParams.set('e', params.elongation.toString());
+  
+  if (params.isReverseGear) {
+    searchParams.set('rev', '1');
+  }
 
   return searchParams.toString();
 };
@@ -55,6 +59,9 @@ export const parseParamsFromQueryString = (search: string): Partial<SpirographPa
 
   const e = parseNum('e');
   if (e && !isNaN(e)) result.elongation = e;
+  
+  const rev = searchParams.get('rev');
+  if (rev === '1') result.isReverseGear = true;
 
   return result;
 };

@@ -326,7 +326,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <input
               type="range"
               min="30"
-              max="200"
+              max="400"
               value={params.R}
               onChange={(e) => handleChange('R', Number(e.target.value))}
               className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
@@ -359,7 +359,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <input
               type="range"
               min="2"
-              max="150"
+              max="300"
               value={params.r}
               onChange={(e) => handleChange('r', Number(e.target.value))}
               className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
@@ -374,7 +374,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <input
               type="range"
               min="0"
-              max="150"
+              max="300"
               value={params.d}
               onChange={(e) => handleChange('d', Number(e.target.value))}
               className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
@@ -389,7 +389,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <input
               type="range"
               min="0.5"
-              max="20"
+              max="40"
               step="0.5"
               value={params.strokeWidth}
               onChange={(e) => handleChange('strokeWidth', Number(e.target.value))}

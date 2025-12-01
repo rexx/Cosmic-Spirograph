@@ -46,22 +46,6 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Handle canvas resizing
-  useEffect(() => {
-    if (canvasRef.current && backgroundCanvasRef.current) {
-      const w = Math.max(1, dimensions.width);
-      const h = Math.max(1, dimensions.height);
-
-      canvasRef.current.width = w;
-      canvasRef.current.height = h;
-      backgroundCanvasRef.current.width = w;
-      backgroundCanvasRef.current.height = h;
-      
-      // Force a redraw when dimensions change
-      requestAnimationFrame(renderFrame);
-    }
-  }, [dimensions]);
-
   // Helper function to draw the fixed gear shape
   const drawFixedGearShape = useCallback((ctx: CanvasRenderingContext2D, cx: number, cy: number) => {
     const { R, shape, elongation } = params;
@@ -203,6 +187,51 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 
   }, [dimensions, pan, zoom, drawOverlay]);
+
+  // Handle canvas resizing
+  useEffect(() => {
+    if (canvasRef.current && backgroundCanvasRef.current) {
+      const bgCanvas = backgroundCanvasRef.current;
+      const ctx = bgCanvas.getContext('2d');
+      
+      // Save existing content before resizing
+      let tempCanvas: HTMLCanvasElement | null = null;
+      if (ctx && bgCanvas.width > 0 && bgCanvas.height > 0) {
+        tempCanvas = document.createElement('canvas');
+        tempCanvas.width = bgCanvas.width;
+        tempCanvas.height = bgCanvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        if (tempCtx) {
+          tempCtx.drawImage(bgCanvas, 0, 0);
+        }
+      }
+
+      const w = Math.max(1, dimensions.width);
+      const h = Math.max(1, dimensions.height);
+
+      canvasRef.current.width = w;
+      canvasRef.current.height = h;
+      backgroundCanvasRef.current.width = w;
+      backgroundCanvasRef.current.height = h;
+      
+      // Restore content, maintaining the center
+      if (ctx && tempCanvas) {
+        // Calculate offsets to keep the drawing centered
+        const oldCx = tempCanvas.width / 2;
+        const oldCy = tempCanvas.height / 2;
+        const newCx = w / 2;
+        const newCy = h / 2;
+        
+        const dx = newCx - oldCx;
+        const dy = newCy - oldCy;
+        
+        ctx.drawImage(tempCanvas, dx, dy);
+      }
+      
+      // Force a redraw when dimensions change
+      requestAnimationFrame(renderFrame);
+    }
+  }, [dimensions, renderFrame]);
 
   // Explicit Clear Logic
   useEffect(() => {

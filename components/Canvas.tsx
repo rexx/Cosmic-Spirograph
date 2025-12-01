@@ -28,22 +28,36 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
   // Track previous clear trigger to prevent auto-clearing on re-renders
   const prevClearTrigger = useRef(clearTrigger);
 
-  // Resize handler
+  // Resize handler using ResizeObserver for accuracy (fixes mobile rotation distortion)
   useEffect(() => {
-    const handleResize = () => {
-      if (canvasRef.current && canvasRef.current.parentElement) {
-        const { clientWidth, clientHeight } = canvasRef.current.parentElement;
-        // Ensure strictly positive dimensions to prevent InvalidStateError
-        if (clientWidth > 0 && clientHeight > 0) {
-          setDimensions({ width: clientWidth, height: clientHeight });
+    if (!canvasRef.current?.parentElement) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      // Use requestAnimationFrame to avoid "ResizeObserver loop limit exceeded" and potential flicker
+      requestAnimationFrame(() => {
+        if (!entries.length) return;
+        const entry = entries[0];
+        
+        // contentRect gives the precise content box dimensions, safe from CSS transforms/stretching
+        const { width, height } = entry.contentRect;
+        
+        // Ensure strictly positive integer dimensions
+        const w = Math.round(width);
+        const h = Math.round(height);
+
+        if (w > 0 && h > 0) {
+          setDimensions(prev => {
+            // Only update if actually changed to prevent loops
+            if (prev.width === w && prev.height === h) return prev;
+            return { width: w, height: h };
+          });
         }
-      }
-    };
+      });
+    });
 
-    window.addEventListener('resize', handleResize);
-    handleResize();
+    resizeObserver.observe(canvasRef.current.parentElement);
 
-    return () => window.removeEventListener('resize', handleResize);
+    return () => resizeObserver.disconnect();
   }, []);
 
   // Helper function to draw the fixed gear shape
@@ -115,14 +129,6 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
     }
     
     // Rotation Calculation:
-    // Standard Physics:
-    // Inner (Hypo): Orbit CW -> Rotation CCW relative to contact line -> Subtract Angle
-    // Outer (Epi): Orbit CW -> Rotation CW relative to contact line -> Add Angle
-    
-    // Reverse Gear (Anti-Physics):
-    // Inner: Add Angle
-    // Outer: Subtract Angle
-    
     const rotation = distance / r;
     const sign = (mode === Mode.OUTER ? 1 : -1) * (isReverseGear ? -1 : 1);
     const penTheta = contactAngle + (sign * rotation);
@@ -188,13 +194,14 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
 
   }, [dimensions, pan, zoom, drawOverlay]);
 
-  // Handle canvas resizing
+  // Handle canvas buffer resizing and persistence
   useEffect(() => {
     if (canvasRef.current && backgroundCanvasRef.current) {
       const bgCanvas = backgroundCanvasRef.current;
       const ctx = bgCanvas.getContext('2d');
       
       // Save existing content before resizing
+      // We grab from the background canvas which holds the pattern
       let tempCanvas: HTMLCanvasElement | null = null;
       if (ctx && bgCanvas.width > 0 && bgCanvas.height > 0) {
         tempCanvas = document.createElement('canvas');
@@ -209,6 +216,8 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
       const w = Math.max(1, dimensions.width);
       const h = Math.max(1, dimensions.height);
 
+      // Explicitly set the internal resolution to match the container dimensions
+      // This prevents the browser from stretching the canvas via CSS
       canvasRef.current.width = w;
       canvasRef.current.height = h;
       backgroundCanvasRef.current.width = w;
@@ -225,6 +234,7 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
         const dx = newCx - oldCx;
         const dy = newCy - oldCy;
         
+        // Draw the saved content into the new (blank) buffer at the correct center
         ctx.drawImage(tempCanvas, dx, dy);
       }
       

@@ -12,12 +12,17 @@ interface CanvasProps {
   showCanvasControls: boolean;
 }
 
+// Fixed virtual size for the backing store (drawing surface)
+// 4000px should be sufficient to hold large patterns without clipping
+const VIRTUAL_SIZE = 4000;
+const VIRTUAL_CENTER = VIRTUAL_SIZE / 2;
+
 const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDarkMode, showGuides, showCanvasControls }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
   const requestRef = useRef<number>(0);
   const distanceRef = useRef<number>(0); // Track distance traveled instead of angle
-  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   // Viewport State (Pan & Zoom)
   const [zoom, setZoom] = useState(1);
@@ -28,29 +33,38 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
   // Track previous clear trigger to prevent auto-clearing on re-renders
   const prevClearTrigger = useRef(clearTrigger);
 
-  // Resize handler using ResizeObserver for accuracy (fixes mobile rotation distortion)
+  // Initialize Backing Canvas Size once
+  useEffect(() => {
+    if (backgroundCanvasRef.current) {
+      backgroundCanvasRef.current.width = VIRTUAL_SIZE;
+      backgroundCanvasRef.current.height = VIRTUAL_SIZE;
+    }
+  }, []);
+
+  // Resize handler for Display Canvas
   useEffect(() => {
     if (!canvasRef.current?.parentElement) return;
 
     const resizeObserver = new ResizeObserver((entries) => {
-      // Use requestAnimationFrame to avoid "ResizeObserver loop limit exceeded" and potential flicker
+      // Use requestAnimationFrame to avoid "ResizeObserver loop limit exceeded"
       requestAnimationFrame(() => {
         if (!entries.length) return;
         const entry = entries[0];
         
-        // contentRect gives the precise content box dimensions, safe from CSS transforms/stretching
         const { width, height } = entry.contentRect;
-        
-        // Ensure strictly positive integer dimensions
         const w = Math.round(width);
         const h = Math.round(height);
 
         if (w > 0 && h > 0) {
           setDimensions(prev => {
-            // Only update if actually changed to prevent loops
             if (prev.width === w && prev.height === h) return prev;
             return { width: w, height: h };
           });
+          
+          if (canvasRef.current) {
+            canvasRef.current.width = w;
+            canvasRef.current.height = h;
+          }
         }
       });
     });
@@ -79,13 +93,11 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
   }, [params]);
 
   // Helper function to draw the UI overlay (gears, arms)
-  const drawOverlay = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number, distance: number) => {
+  // Accepts cx, cy explicitly to support virtual coordinate systems
+  const drawOverlay = useCallback((ctx: CanvasRenderingContext2D, cx: number, cy: number, distance: number) => {
     if (!showGuides) return;
-    if (width <= 0 || height <= 0) return;
 
     const { R, r, d, mode, color, shape, strokeWidth, elongation, isReverseGear } = params;
-    const cx = width / 2;
-    const cy = height / 2;
 
     const fixedGearColor = isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)';
     const movingGearColor = isDarkMode ? 'rgba(100, 200, 255, 0.4)' : 'rgba(0, 100, 200, 0.3)';
@@ -159,6 +171,7 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
   }, [params, isDarkMode, drawFixedGearShape, showGuides, zoom]);
 
   // Main Render Logic
+  // Composes the backing store onto the display canvas with pan/zoom
   const renderFrame = useCallback(() => {
     const canvas = canvasRef.current;
     const bgCanvas = backgroundCanvasRef.current;
@@ -174,91 +187,47 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
     ctx.clearRect(0, 0, dimensions.width, dimensions.height);
 
     // 2. Apply View Transformation (Pan & Zoom)
-    const cx = dimensions.width / 2;
-    const cy = dimensions.height / 2;
+    const sCx = dimensions.width / 2;
+    const sCy = dimensions.height / 2;
     
-    ctx.translate(cx + pan.x, cy + pan.y);
+    ctx.translate(sCx + pan.x, sCy + pan.y);
     ctx.scale(zoom, zoom);
-    ctx.translate(-cx, -cy);
-
-    // 3. Draw Background Layer (The drawings)
-    if (bgCanvas.width > 0 && bgCanvas.height > 0) {
-      ctx.drawImage(bgCanvas, 0, 0);
-    }
+    
+    // 3. Draw Background Layer (The Virtual Canvas)
+    // The pattern is centered at VIRTUAL_CENTER in the backing canvas.
+    // We want that point to align with the origin (0,0) of our transformed context.
+    ctx.drawImage(bgCanvas, -VIRTUAL_CENTER, -VIRTUAL_CENTER);
 
     // 4. Draw Overlay (UI guides)
-    drawOverlay(ctx, dimensions.width, dimensions.height, distanceRef.current);
+    // We are in a coordinate system where (0,0) is the center of the pattern.
+    drawOverlay(ctx, 0, 0, distanceRef.current);
 
     // Reset transform for safety
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 
   }, [dimensions, pan, zoom, drawOverlay]);
 
-  // Handle canvas buffer resizing and persistence
+  // Ensure renderFrame is called when dimensions change to prevent blank screen on resize
   useEffect(() => {
-    if (canvasRef.current && backgroundCanvasRef.current) {
-      const bgCanvas = backgroundCanvasRef.current;
-      const ctx = bgCanvas.getContext('2d');
-      
-      // Save existing content before resizing
-      // We grab from the background canvas which holds the pattern
-      let tempCanvas: HTMLCanvasElement | null = null;
-      if (ctx && bgCanvas.width > 0 && bgCanvas.height > 0) {
-        tempCanvas = document.createElement('canvas');
-        tempCanvas.width = bgCanvas.width;
-        tempCanvas.height = bgCanvas.height;
-        const tempCtx = tempCanvas.getContext('2d');
-        if (tempCtx) {
-          tempCtx.drawImage(bgCanvas, 0, 0);
-        }
-      }
-
-      const w = Math.max(1, dimensions.width);
-      const h = Math.max(1, dimensions.height);
-
-      // Explicitly set the internal resolution to match the container dimensions
-      // This prevents the browser from stretching the canvas via CSS
-      canvasRef.current.width = w;
-      canvasRef.current.height = h;
-      backgroundCanvasRef.current.width = w;
-      backgroundCanvasRef.current.height = h;
-      
-      // Restore content, maintaining the center
-      if (ctx && tempCanvas) {
-        // Calculate offsets to keep the drawing centered
-        const oldCx = tempCanvas.width / 2;
-        const oldCy = tempCanvas.height / 2;
-        const newCx = w / 2;
-        const newCy = h / 2;
-        
-        const dx = newCx - oldCx;
-        const dy = newCy - oldCy;
-        
-        // Draw the saved content into the new (blank) buffer at the correct center
-        ctx.drawImage(tempCanvas, dx, dy);
-      }
-      
-      // Force a redraw when dimensions change
-      requestAnimationFrame(renderFrame);
-    }
+    requestAnimationFrame(renderFrame);
   }, [dimensions, renderFrame]);
 
   // Explicit Clear Logic
   useEffect(() => {
-    // Only run if clearTrigger actually changed (prevents clearing on zoom/pan/param change)
     if (clearTrigger !== prevClearTrigger.current) {
       prevClearTrigger.current = clearTrigger;
 
-      if (backgroundCanvasRef.current && canvasRef.current) {
+      if (backgroundCanvasRef.current) {
         const bgCtx = backgroundCanvasRef.current.getContext('2d');
-        if (bgCtx && dimensions.width > 0 && dimensions.height > 0) {
-          bgCtx.clearRect(0, 0, dimensions.width, dimensions.height);
+        if (bgCtx) {
+          // Clear the entire virtual canvas
+          bgCtx.clearRect(0, 0, VIRTUAL_SIZE, VIRTUAL_SIZE);
           distanceRef.current = 0;
           renderFrame();
         }
       }
     }
-  }, [clearTrigger, renderFrame, dimensions]); 
+  }, [clearTrigger, renderFrame]); 
 
   // Animation Loop
   useEffect(() => {
@@ -272,11 +241,11 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
     const animate = () => {
       // If playing, update the drawing on background canvas
       if (isPlaying) {
-        if (dimensions.width <= 0 || dimensions.height <= 0) return;
-
         const { R, r, d, mode, speed, color, shape, strokeWidth, elongation, isReverseGear } = params;
-        const cx = dimensions.width / 2;
-        const cy = dimensions.height / 2;
+        
+        // Draw onto the fixed Virtual Center
+        const cx = VIRTUAL_CENTER;
+        const cy = VIRTUAL_CENTER;
 
         const stepSize = 2; 
         const steps = Math.ceil(speed); 
@@ -288,7 +257,7 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
 
         let startDist = distanceRef.current;
         
-        // Calculate start position of this frame
+        // Calculate start position
         const startShapeP = getShapeData(shape, R, elongation, startDist);
         let startNorm = startShapeP.normalAngle;
         let startGearCx, startGearCy;
@@ -358,7 +327,7 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
     return () => {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
-  }, [isPlaying, params, dimensions, isDarkMode, renderFrame, zoom, pan]);
+  }, [isPlaying, params, isDarkMode, renderFrame, zoom, pan]); // Animation depends on playback state and params
 
   // Interaction Handlers
 

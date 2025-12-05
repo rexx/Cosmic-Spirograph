@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Mode, SpirographParams, Language, Shape, PatternPreset, SavedSpirographParams } from '../types';
-import { Play, Trash2, Wand2, Sun, Moon, Languages, Circle, Square, Triangle, Minus, Eye, EyeOff, Share2, Check, Save, FolderOpen, X, Image as ImageIcon, RotateCcw, Palette } from 'lucide-react';
+import { Play, Trash2, Wand2, Sun, Moon, Languages, Circle, Square, Triangle, Minus, Eye, EyeOff, Share2, Check, Save, FolderOpen, X, Image as ImageIcon, RotateCcw } from 'lucide-react';
 
 interface ControlPanelProps {
   params: SpirographParams;

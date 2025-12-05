@@ -156,7 +156,8 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
     ctx.stroke();
 
     // Draw Pen Point
-    ctx.fillStyle = color;
+    const isRainbow = color === 'rainbow';
+    ctx.fillStyle = isRainbow ? `hsl(${(distance * 0.2) % 360}, 100%, 50%)` : color;
     ctx.beginPath();
     // Keep point size visible but responsive to zoom
     const baseRadius = Math.max(4, strokeWidth / 2 + 1);
@@ -248,12 +249,11 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
         const cy = VIRTUAL_CENTER;
 
         const stepSize = 2; 
-        const steps = Math.ceil(speed); 
+        const steps = Math.ceil(speed);
+        const isRainbow = color === 'rainbow';
         
-        bgCtx.strokeStyle = color;
         bgCtx.lineWidth = strokeWidth || 1.5;
         bgCtx.lineCap = 'round';
-        bgCtx.beginPath();
 
         let startDist = distanceRef.current;
         
@@ -274,10 +274,14 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
         let startSign = (mode === Mode.OUTER ? 1 : -1) * (isReverseGear ? -1 : 1);
         let startPenTheta = startContactA + (startSign * startRot);
 
-        let startPenX = startGearCx + d * Math.cos(startPenTheta);
-        let startPenY = startGearCy + d * Math.sin(startPenTheta);
+        let prevPenX = startGearCx + d * Math.cos(startPenTheta);
+        let prevPenY = startGearCy + d * Math.sin(startPenTheta);
 
-        bgCtx.moveTo(startPenX, startPenY);
+        if (!isRainbow) {
+           bgCtx.strokeStyle = color;
+           bgCtx.beginPath();
+           bgCtx.moveTo(prevPenX, prevPenY);
+        }
 
         for (let i = 0; i < steps; i++) {
           distanceRef.current += stepSize;
@@ -304,9 +308,25 @@ const Canvas: React.FC<CanvasProps> = ({ params, isPlaying, clearTrigger, isDark
           let pX = gCx + d * Math.cos(pTheta);
           let pY = gCy + d * Math.sin(pTheta);
 
-          bgCtx.lineTo(pX, pY);
+          if (isRainbow) {
+            bgCtx.beginPath();
+            bgCtx.moveTo(prevPenX, prevPenY);
+            bgCtx.lineTo(pX, pY);
+            // Hue shifts slowly with distance
+            const hue = (dist * 0.2) % 360; 
+            bgCtx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
+            bgCtx.stroke();
+          } else {
+            bgCtx.lineTo(pX, pY);
+          }
+
+          prevPenX = pX;
+          prevPenY = pY;
         }
-        bgCtx.stroke();
+
+        if (!isRainbow) {
+           bgCtx.stroke();
+        }
       }
 
       // Always render the visual frame (handling pan/zoom updates)

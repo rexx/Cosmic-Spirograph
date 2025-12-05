@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Mode, SpirographParams, Language, Shape, PatternPreset, SavedSpirographParams } from '../types';
-import { Play, Trash2, Wand2, Sun, Moon, Languages, Circle, Square, Triangle, Minus, Eye, EyeOff, Share2, Check, Save, FolderOpen, X, Image as ImageIcon, RotateCcw } from 'lucide-react';
+import { Play, Trash2, Wand2, Sun, Moon, Languages, Circle, Square, Triangle, Minus, Eye, EyeOff, Share2, Check, Save, FolderOpen, X, Image as ImageIcon, RotateCcw, Palette } from 'lucide-react';
 
 interface ControlPanelProps {
   params: SpirographParams;
@@ -61,6 +61,7 @@ const translations = {
     savePlaceholder: "Pattern Name...",
     save: "Save",
     load: "Load",
+    rainbow: "Rainbow",
   },
   zh: {
     title: "宇宙萬花尺",
@@ -95,6 +96,7 @@ const translations = {
     savePlaceholder: "輸入名稱...",
     save: "儲存",
     load: "載入",
+    rainbow: "彩虹模式",
   }
 };
 
@@ -109,6 +111,9 @@ const hslToHex = (h: number, s: number, l: number) => {
   };
   return `#${f(0)}${f(8)}${f(4)}`;
 };
+
+// The specific full spectrum gradient requested
+const RAINBOW_GRADIENT_STOPS = 'rgb(255, 0, 0), rgb(255, 255, 0), rgb(0, 255, 0), rgb(0, 255, 255), rgb(0, 0, 255), rgb(255, 0, 255), rgb(255, 0, 0)';
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
   params,
@@ -178,8 +183,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     handleChange('color', hex);
   };
 
-  // Primary colors + BW
-  const colorPresets = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff', '#000000'];
+  // Primary colors + BW (Ordered as requested: Red, Yellow, Green, Cyan, Blue, Magenta)
+  const colorPresets = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#ffffff', '#000000'];
+
+  const isRainbow = params.color === 'rainbow';
 
   return (
     <div className="w-full h-full bg-white dark:bg-gray-900 p-6 flex flex-col overflow-y-auto custom-scrollbar text-gray-900 dark:text-gray-100 transition-colors duration-300">
@@ -205,7 +212,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
       </div>
 
-      {/* Top Actions Grid (Removed Share) */}
+      {/* Top Actions Grid */}
       <div className="grid grid-cols-4 gap-2 mb-6">
         <button
           onClick={() => setIsPlaying(!isPlaying)}
@@ -419,21 +426,37 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           
           {/* Current Color Information Panel */}
           <div className="flex items-center justify-between mb-3 bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-             {/* Left: Hex Code (No text label) */}
-             <span className="font-mono text-gray-900 dark:text-white text-sm font-semibold pl-2 uppercase">{params.color}</span>
+             {/* Left: Hex Code or Rainbow Label */}
+             <span className="font-mono text-gray-900 dark:text-white text-sm font-semibold pl-2 uppercase">
+               {isRainbow ? t.rainbow : params.color}
+             </span>
              
              {/* Right: Color Preview (Clickable for System Picker) */}
              <div 
-               className="relative w-16 h-8 rounded shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all"
+               className={`relative w-16 h-8 rounded shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all`}
                title="Click to open system color picker"
+               style={isRainbow 
+                 ? { background: `linear-gradient(to right, ${RAINBOW_GRADIENT_STOPS})` } 
+                 : { backgroundColor: params.color }
+               }
              >
-                <div className="absolute inset-0" style={{ backgroundColor: params.color }} />
-                <input 
-                   type="color" 
-                   value={params.color}
-                   onChange={(e) => handleChange('color', e.target.value)}
-                   className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" 
-                />
+                {!isRainbow && (
+                  <input 
+                    type="color" 
+                    value={params.color}
+                    onChange={(e) => handleChange('color', e.target.value)}
+                    className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" 
+                  />
+                )}
+                {/* If rainbow, we still render input but value is dummy to prevent crash. Selection overrides rainbow. */}
+                {isRainbow && (
+                  <input 
+                    type="color" 
+                    value="#ffffff"
+                    onChange={(e) => handleChange('color', e.target.value)}
+                    className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" 
+                  />
+                )}
              </div>
           </div>
 
@@ -442,7 +465,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <div 
               ref={spectrumRef}
               className="h-8 w-full rounded cursor-crosshair relative shadow-sm border border-gray-200 dark:border-gray-600 touch-none ring-1 ring-black/5"
-              style={{ background: 'linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)' }}
+              style={{ background: `linear-gradient(to right, ${RAINBOW_GRADIENT_STOPS})` }}
               onMouseDown={(e) => {
                 setIsDraggingSpectrum(true);
                 handleSpectrumChange(e);
@@ -465,6 +488,18 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
           {/* Color Palette Buttons */}
           <div className="flex gap-2 flex-wrap justify-start">
+             {/* Rainbow Button (Color Wheel) */}
+             <button
+                onClick={() => handleChange('color', 'rainbow')}
+                className={`w-8 h-8 rounded-full border-2 shadow-sm transition-all hover:scale-110 active:scale-95 ${
+                  isRainbow
+                    ? 'border-indigo-500 dark:border-white scale-110 ring-2 ring-indigo-200 dark:ring-gray-500' 
+                    : 'border-gray-200 dark:border-gray-600'
+                }`}
+                style={{ background: `conic-gradient(from 0deg, ${RAINBOW_GRADIENT_STOPS})` }}
+                title={t.rainbow}
+             />
+
              {colorPresets.map(c => (
                <button
                 key={c}
